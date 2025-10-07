@@ -267,6 +267,8 @@ LOCATIONS = ["New York", "London", "Berlin", "Boston", "Tokyo", "Sydney", "Phila
 USERS = ["Admin", "User1", "IT-Support", "NetworkAdmin", "Guest", "DevOps", "SecurityAnalyst", "FinanceUser", "HRUser"]
 
 DOMAINS = ["apexaiq.local", "apexaiq.net", "apexaiq.corp", "apexaiq.com"]
+
+
 import random
 import string
 import uuid
@@ -313,6 +315,8 @@ def generate_short_name(device_type):
     return f"{device_type[:2]}-{device_id}"
 def generate_external_uid():
     return str(uuid.uuid4())
+
+
 import json
 import csv
 import random
@@ -324,7 +328,7 @@ def generate_record():
     vendor = random.choice(DEVICE_TYPE_VENDOR_MAPPING[device_type])
     model_options = VENDORS_MODELS[vendor].get(device_type, random.choice(list(VENDORS_MODELS[vendor].values())))
     model = random.choice(model_options if isinstance(model_options, list) else [model_options])
-    
+
     os_full = random.choice(VENDOR_OS_MAPPING[vendor])
     os_version, os_variant = OPERATING_SYSTEMS[os_full]
     eol_link = random.choice(VENDOR_EOL_MAPPING[vendor])
@@ -369,14 +373,14 @@ def generate_json_output(num_records, filename, include_feed=True):
             "feed_type_id": FEED_TYPE_ID,
             "feed": inventory
         }
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
     with open(filename, 'w') as file:
         json.dump(output_data, file, indent=2)
     print(f"✅ JSON file '{filename}' created with {num_records} records!")
 
 def generate_csv_output(num_records, filename):
     inventory = [generate_record() for _ in range(num_records)]
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
     with open(filename, 'w', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=inventory[0].keys())
         writer.writeheader()
@@ -388,38 +392,50 @@ def main():
     default_format = "JSON_CLI"
     default_records = 100
     default_files = 1
+    default_accelerator_uuid = "default-uuid"
+    default_feed_type_id = "default-feed-type"
+    default_json_cli = "output_cli.json"
+    default_json_ui = "output_ui.json"
+    default_csv = "output.csv"
 
-    # Check command line arguments
-    if len(sys.argv) == 1:
-        # No arguments provided, use defaults
+    arg_len = len(sys.argv)
+
+    if arg_len == 1:
         file_format = default_format
         num_records = default_records
         num_files = default_files
-    elif len(sys.argv) == 4:
-        # Full arguments provided
+        accelerator_uuid = default_accelerator_uuid
+        feed_type_id = default_feed_type_id
+        filename = None
+    elif arg_len >= 4:
         file_format = sys.argv[1]
         try:
             num_records = int(sys.argv[2])
             num_files = int(sys.argv[3])
         except ValueError:
             print("Error: Number of records and files must be integers")
-            print("Usage: python main.py [JSON_CLI|JSON_UI|CSV_FILE] [num_records] [num_files]")
-            print("Example: python main.py JSON_CLI 100 2")
             return
+
+        accelerator_uuid = sys.argv[4] if arg_len > 4 else default_accelerator_uuid
+        feed_type_id = sys.argv[5] if arg_len > 5 else default_feed_type_id
+        filename = sys.argv[6] if arg_len > 6 else None
     else:
         print("Error: Invalid number of arguments")
-        print("Usage: python main.py [JSON_CLI|JSON_UI|CSV_FILE] [num_records] [num_files]")
-        print("Example: python main.py JSON_CLI 100 2")
-        print("Default: python main.py (creates CSV_FILE with 100 records and 1 file)")
+        print("Usage: python main.py [JSON_CLI|JSON_UI|CSV_FILE] [num_records] [num_files] [ACCELERATOR_UUID] [FEED_TYPE_ID] [filename]")
         return
 
-    # Validate file format
     valid_formats = ["JSON_CLI", "JSON_UI", "CSV_FILE"]
     if file_format not in valid_formats:
         print(f"Error: Invalid format. Must be one of {valid_formats}")
         return
 
-    # Generate files based on format
+    global ACCELERATOR_UUID, FEED_TYPE_ID, JSON_FILE_CLI, JSON_FILE_UI, CSV_FILE
+    ACCELERATOR_UUID = accelerator_uuid
+    FEED_TYPE_ID = feed_type_id
+    JSON_FILE_CLI = filename if filename and file_format == "JSON_CLI" else default_json_cli
+    JSON_FILE_UI = filename if filename and file_format == "JSON_UI" else default_json_ui
+    CSV_FILE = filename if filename and file_format == "CSV_FILE" else default_csv
+
     for i in range(num_files):
         if file_format == "JSON_CLI":
             generate_json_output(num_records, f"{JSON_FILE_CLI[:-5]}_{i}.json", include_feed=True)
