@@ -316,12 +316,13 @@ def generate_short_name(device_type):
 def generate_external_uid():
     return str(uuid.uuid4())
 
-
 import json
 import csv
 import random
 import os
 import sys
+
+# --- Your helper functions like generate_record(), generate_mac(), etc. remain unchanged ---
 
 def generate_record():
     device_type = random.choice(DEVICE_TYPES)
@@ -341,10 +342,6 @@ def generate_record():
         "external_uid": generate_external_uid(),
         "device_type": device_type,
         "vendor": vendor,
-        # "model": model,
-        # "short_name": generate_short_name(device_type),
-        # "domain": random.choice(DOMAINS),
-        # "public_ip_address": generate_public_ip(),
         "location": random.choice(LOCATIONS),
         "user": random.choice(USERS),
         "operating_system_full": os_full,
@@ -370,7 +367,7 @@ def generate_json_output(num_records, filename, include_feed=True):
     if include_feed:
         output_data = {
             "accelerator_uuid": ACCELERATOR_UUID,
-            "feed_type_id": FEED_TYPE_ID,
+            "feed_type_id": FEED_TYPE_ID,  # <-- now an integer
             "feed": inventory
         }
     os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
@@ -393,7 +390,7 @@ def main():
     default_records = 100
     default_files = 1
     default_accelerator_uuid = "default-uuid"
-    default_feed_type_id = "default-feed-type"
+    default_feed_type_id = 1  # <-- changed to integer
     default_json_cli = "output_cli.json"
     default_json_ui = "output_ui.json"
     default_csv = "output.csv"
@@ -417,7 +414,7 @@ def main():
             return
 
         accelerator_uuid = sys.argv[4] if arg_len > 4 else default_accelerator_uuid
-        feed_type_id = sys.argv[5] if arg_len > 5 else default_feed_type_id
+        feed_type_id = int(sys.argv[5]) if arg_len > 5 else default_feed_type_id  # <-- convert to int
         filename = sys.argv[6] if arg_len > 6 else None
     else:
         print("Error: Invalid number of arguments")
